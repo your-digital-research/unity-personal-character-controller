@@ -111,11 +111,12 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   body: {fileID: 106046514071759562}
   movementSpeed: 2.5
-  rotationSpeed: 2.5
+  rotationSpeed: 1
+  runningAcceleration: 0.05
+  runningDeceleration: 0.05
+  movementSpeedBoostPercentageWhileRunning: 1
+  isWalking: 0
   isRunning: 0
-  currentSpeed: 0
-  currentMoveDirection: {x: 0, y: 0, z: 0}
-  currentLookDirection: {x: 0, y: 0, z: 0, w: 0}
 --- !u!114 &1585397458
 MonoBehaviour:
   m_ObjectHideFlags: 0

@@ -8,7 +8,10 @@ public class PlayerAnimationStateController : MonoBehaviour
     [SerializeField] private PlayerMovementController playerMovementController;
 
     private Coroutine animationStateCheckingRoutine;
+
     private static readonly int VelocityZHash = Animator.StringToHash("Velocity Z");
+    private static readonly int IsWalkingHash = Animator.StringToHash("Is Walking");
+    private static readonly int IsRunningZHash = Animator.StringToHash("Is Running");
 
     public void StartAnimationStateChecking()
     {
@@ -34,10 +37,14 @@ public class PlayerAnimationStateController : MonoBehaviour
     private void UpdateState()
     {
         // Get running state and input amount
+        bool isWalking = playerMovementController.IsWalking();
         bool isRunning = playerMovementController.IsRunning();
         float inputAmount = playerMovementController.GetInputAmount();
+        float currentMovementSpeed = playerMovementController.GetCurrentMovementSpeed();
 
         // Set the parameters to our local variable values
-        animator.SetFloat(VelocityZHash, isRunning ? inputAmount * 2 : inputAmount);
+        animator.SetBool(IsWalkingHash, isWalking);
+        animator.SetBool(IsRunningZHash, isRunning);
+        animator.SetFloat(VelocityZHash, inputAmount * currentMovementSpeed);
     }
 }

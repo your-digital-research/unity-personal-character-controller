@@ -7,23 +7,30 @@ public class PlayerMovementController : MonoBehaviour
     [SerializeField] private Rigidbody body;
 
     [Header("Properties")]
-    [SerializeField] private float movementSpeed;
-    [SerializeField] private float rotationSpeed;
+    [SerializeField] [Range(0, 25)] private float movementSpeed;
+    [SerializeField] [Range(0, 25)] private float rotationSpeed;
+    [SerializeField] [Range(0, 1)] private float runningAcceleration;
+    [SerializeField] [Range(0, 1)] private float runningDeceleration;
+    [SerializeField] [Range(0, 1)] private float movementSpeedBoostPercentageWhileRunning;
 
     [Header("States")]
+    [SerializeField] private bool isWalking;
     [SerializeField] private bool isRunning;
-
-    [Header("Debug Properties")]
-    [SerializeField] private float currentSpeed;
-    [SerializeField] private Vector3 currentMoveDirection;
-    [SerializeField] private Quaternion currentLookDirection;
 
     private float inputAmount;
     private float verticalInput;
     private float horizontalInput;
+    private float runningTransition;
+    private float currentMovementSpeed;
+
     private Vector3 moveDirection;
     private Coroutine movementRoutine;
     private Quaternion lastLookRotation;
+
+    public bool IsWalking()
+    {
+        return isWalking;
+    }
 
     public bool IsRunning()
     {
@@ -33,6 +40,11 @@ public class PlayerMovementController : MonoBehaviour
     public float GetInputAmount()
     {
         return inputAmount;
+    }
+
+    public float GetCurrentMovementSpeed()
+    {
+        return currentMovementSpeed;
     }
 
     public void StartMovementRoutine()
@@ -59,6 +71,9 @@ public class PlayerMovementController : MonoBehaviour
         // Make sure the input doesnt go negative or above 1;
         float inputMagnitude = Mathf.Abs(verticalInput) + Mathf.Abs(horizontalInput);
         inputAmount = Mathf.Clamp01(inputMagnitude);
+
+        // Check for walking boolean
+        isWalking = (inputAmount > 0 && !isRunning);
     }
 
     private void UpdateCameraLookRotation(Transform mainCameraTransform, Transform lookAtTransform)
@@ -71,7 +86,6 @@ public class PlayerMovementController : MonoBehaviour
 
         // Assign camera look rotation to LookAt transform rotation
         // lookAtTransform.rotation = cameraLookRotation;
-
         CameraController.Instance.UpdateLookDirection(cameraLookRotation);
     }
 
@@ -86,6 +100,7 @@ public class PlayerMovementController : MonoBehaviour
         float directionX = combinedInput.normalized.x;
         float directionZ = combinedInput.normalized.z;
 
+        // Assign calculated direction
         moveDirection = new Vector3 (directionX, 0, directionZ);
     }
 
@@ -103,22 +118,10 @@ public class PlayerMovementController : MonoBehaviour
             Quaternion targetRotation = Quaternion.LookRotation(moveDirection);
             Quaternion playerLookRotation = Quaternion.Slerp(currentRotation, targetRotation, inputAmount * rotationSpeed);
 
-            // Check inputs
-            bool isAxisPressed = verticalInput != 0 || horizontalInput != 0;
-
-            if (isAxisPressed)
-            {
-                transform.rotation = playerLookRotation;
-                lastLookRotation = playerLookRotation;
-            }
-            else
-            {
-                transform.rotation = lastLookRotation;
-            }
+            // Assign calculated rotation
+            transform.rotation = playerLookRotation;
+            lastLookRotation = playerLookRotation;
         }
-
-        // Set debug properties
-        currentLookDirection = lastLookRotation;
     }
 
     private void UpdatePlayerVelocity()
@@ -126,18 +129,19 @@ public class PlayerMovementController : MonoBehaviour
         // Check inputs
         bool isAxisPressed = verticalInput != 0 || horizontalInput != 0;
 
-        // Calculate movement speed
-        float speed = isRunning ? movementSpeed * 2 : movementSpeed;
+        // Calculate running transition
+        runningTransition += isRunning ? runningAcceleration : -runningDeceleration;
+        runningTransition = Mathf.Clamp(runningTransition, 0, 1);
+
+        // Calculate current movement speed
+        float runningMovementSpeed = movementSpeed + (movementSpeed * movementSpeedBoostPercentageWhileRunning);
+        currentMovementSpeed = Mathf.Lerp(movementSpeed, runningMovementSpeed, runningTransition);
 
         // Calculate direction
         Vector3 direction = isAxisPressed ? moveDirection : Vector3.zero;
 
         // Set velocity by multiplying movement direction and movement speed
-        body.velocity = direction * (speed * inputAmount);
-
-        // Set debug properties
-        currentSpeed = body.velocity.magnitude;
-        currentMoveDirection = direction;
+        body.velocity = direction * (currentMovementSpeed * inputAmount);
     }
 
     private void Move()
