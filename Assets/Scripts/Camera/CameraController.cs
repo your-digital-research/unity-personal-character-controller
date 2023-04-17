@@ -7,20 +7,21 @@ public class CameraController : MonoBehaviour
 
     [Header("References")]
     [SerializeField] private CinemachineFreeLook mainCamera;
-    [SerializeField] private Transform lookAtTransform;
+    [SerializeField] private GameObject visualContainer;
 
-    [Header("Debug Properties")]
-    [SerializeField] private Quaternion currentLookDirection;
-
-    public CinemachineFreeLook MainCamera => mainCamera;
-    public Transform LookAtTransform => lookAtTransform;
-
-    public void UpdateLookDirection(Quaternion newRotation)
+    public Transform GetMainCameraTransform()
     {
-        lookAtTransform.rotation = newRotation;
+        return mainCamera.transform;
+    }
 
-        // Set debug properties
-        currentLookDirection = newRotation;
+    public Transform GetVisualContainerTransform()
+    {
+        return visualContainer.transform;
+    }
+
+    public void UpdateLookRotation(Quaternion newRotation)
+    {
+        visualContainer.transform.rotation = newRotation;
     }
 
     private void Init()

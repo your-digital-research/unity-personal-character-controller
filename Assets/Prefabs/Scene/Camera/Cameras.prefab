@@ -428,8 +428,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   mainCamera: {fileID: 1984450934268837131}
-  lookAtTransform: {fileID: 1984450934843896663}
-  currentLookDirection: {x: 0, y: 0, z: 0, w: 0}
+  visualContainer: {fileID: 5595915427976864101}
 --- !u!1 &1984450934006754352
 GameObject:
   m_ObjectHideFlags: 0
@@ -812,7 +811,7 @@ Transform:
   - {fileID: 1984450934962095885}
   - {fileID: 1984450934717448963}
   - {fileID: 1984450933048949101}
-  - {fileID: 1984450934843896663}
+  - {fileID: 1181754329503268938}
   m_Father: {fileID: 1984450933043310916}
   m_RootOrder: 0
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
@@ -1209,7 +1208,7 @@ GameObject:
   - component: {fileID: 1984450934843896660}
   - component: {fileID: 1984450934843896661}
   m_Layer: 0
-  m_Name: LookAtTransform
+  m_Name: Cube
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -1222,12 +1221,12 @@ Transform:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1984450934843896656}
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children: []
-  m_Father: {fileID: 1984450934268837236}
-  m_RootOrder: 3
+  m_Father: {fileID: 1181754329503268938}
+  m_RootOrder: 0
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!33 &1984450934843896660
 MeshFilter:
@@ -1384,3 +1383,34 @@ MonoBehaviour:
         m_Calls: []
   m_LegacyBlendHint: 0
   m_ComponentOwner: {fileID: 1984450933205735354}
+--- !u!1 &5595915427976864101
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1181754329503268938}
+  m_Layer: 0
+  m_Name: VisualContainer
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1181754329503268938
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5595915427976864101}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_Children:
+  - {fileID: 1984450934843896663}
+  m_Father: {fileID: 1984450934268837236}
+  m_RootOrder: 3
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}

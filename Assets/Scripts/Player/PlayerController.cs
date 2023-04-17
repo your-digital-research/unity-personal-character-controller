@@ -27,9 +27,4 @@ public class PlayerController : MonoBehaviour
     {
         Init();
     }
-
-    private void Awake()
-    {
-        //
-    }
 }

@@ -3,6 +3,7 @@ using UnityEngine;
 
 public class MovingObstacle : MonoBehaviour
 {
+    [Header("Movement Settings")]
     [SerializeField] private Ease ease;
     [SerializeField] [Range(0, 10)] private float delay;
     [SerializeField] [Range(0, 10)] private float duration;
@@ -23,10 +24,5 @@ public class MovingObstacle : MonoBehaviour
     private void Start()
     {
         StartMovement();
-    }
-
-    private void Awake()
-    {
-        //
     }
 }

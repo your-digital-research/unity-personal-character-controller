@@ -131,32 +131,38 @@ public class PlayerMovementController : MonoBehaviour
         isWalking = (inputAmount > 0 && !isRunning);
     }
 
-    private void UpdateCameraLookRotation(Transform mainCameraTransform, Transform lookAtTransform)
+    private void UpdateCameraLookRotation()
     {
+        // Get main camera transform for rotation calculation
+        Transform mainCameraTransform = CameraController.Instance.GetMainCameraTransform();
+
         // Calculate camera look direction & rotation
         Vector3 playerPosition = transform.position;
         Vector3 cameraPosition = mainCameraTransform.position;
         Vector3 cameraLookDirection = (playerPosition - cameraPosition).normalized;
         Quaternion cameraLookRotation = Quaternion.LookRotation(cameraLookDirection);
 
-        // Assign camera look rotation to LookAt transform rotation
-        // lookAtTransform.rotation = cameraLookRotation;
-        CameraController.Instance.UpdateLookDirection(cameraLookRotation);
+        // Update camera look direction
+        CameraController.Instance.UpdateLookRotation(cameraLookRotation);
     }
 
-    private void UpdateMoveDirection(Transform lookAtTransform)
+    private void UpdateMoveDirection()
     {
+        // Get camera visual container transform for direction calculation
+        Transform cameraVisualContainerTransform = CameraController.Instance.GetVisualContainerTransform();
+
         // Calculate final inputs based on player input and camera rotation
-        Vector3 correctedVertical = lookAtTransform.forward * verticalInput;
-        Vector3 correctedHorizontal = lookAtTransform.right * horizontalInput;
+        Vector3 correctedVertical = cameraVisualContainerTransform.forward * verticalInput;
+        Vector3 correctedHorizontal = cameraVisualContainerTransform.right * horizontalInput;
         Vector3 combinedInput = correctedVertical + correctedHorizontal;
 
         // Getting movement direction
         float directionX = combinedInput.normalized.x;
         float directionZ = combinedInput.normalized.z;
+        Vector3 newDirection = new Vector3(directionX, 0, directionZ);
 
         // Assign calculated direction
-        moveDirection = new Vector3(directionX, 0, directionZ);
+        moveDirection = newDirection;
     }
 
     private void UpdatePlayerLookRotation()
@@ -169,10 +175,10 @@ public class PlayerMovementController : MonoBehaviour
         else
         {
             // Calculate rotation
+            float transition = inputAmount * rotationSpeed;
             Quaternion currentRotation = transform.rotation;
             Quaternion targetRotation = Quaternion.LookRotation(moveDirection);
-            Quaternion playerLookRotation =
-                Quaternion.Slerp(currentRotation, targetRotation, inputAmount * rotationSpeed);
+            Quaternion playerLookRotation = Quaternion.Slerp(currentRotation, targetRotation, transition);
 
             // Assign calculated rotation
             transform.rotation = playerLookRotation;
@@ -194,6 +200,7 @@ public class PlayerMovementController : MonoBehaviour
         Vector3 raycastPosition = new Vector3(body.position.x, floor.y, body.position.z);
         Vector3 floorPosition = new Vector3(body.position.x, floor.y + floorOffsetY, body.position.z);
 
+        // Assign calculated floor position
         floorMovement = floorPosition;
 
         // Debug for position points
@@ -254,15 +261,12 @@ public class PlayerMovementController : MonoBehaviour
         // Update inputs
         UpdateInputs();
 
-        // Get Main Camera & LookAt transforms
-        Transform mainCameraTransform = CameraController.Instance.MainCamera.transform;
-        Transform lookAtTransform = CameraController.Instance.LookAtTransform;
-
-        // Update properties
-        UpdateCameraLookRotation(mainCameraTransform, lookAtTransform);
-        UpdateMoveDirection(lookAtTransform);
+        // Update rotations and directions
+        UpdateCameraLookRotation();
+        UpdateMoveDirection();
         UpdatePlayerLookRotation();
 
+        // Update Rigidbody and player velocity
         ApplyGravityAndUpdateRigidbody();
         UpdatePlayerVelocity();
     }

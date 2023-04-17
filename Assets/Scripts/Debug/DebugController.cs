@@ -10,9 +10,14 @@ public class DebugController : MonoBehaviour
 
     public Transform DebugContainer => debugContainer;
 
-    private void Start()
+    private void Init()
     {
         //
+    }
+
+    private void Start()
+    {
+        Init();
     }
 
     private void Awake()
