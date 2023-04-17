@@ -7,6 +7,7 @@ public class PlayerMovementController : MonoBehaviour
     [SerializeField] private Rigidbody body;
 
     [Header("Properties")]
+    [SerializeField] [Range(0, 5)] private float floorOffsetY;
     [SerializeField] [Range(0, 25)] private float movementSpeed;
     [SerializeField] [Range(0, 25)] private float rotationSpeed;
     [SerializeField] [Range(0, 1)] private float runningAcceleration;
@@ -16,6 +17,18 @@ public class PlayerMovementController : MonoBehaviour
     [Header("States")]
     [SerializeField] private bool isWalking;
     [SerializeField] private bool isRunning;
+    [SerializeField] private bool isGrounded;
+
+    [Header("Raycasts")]
+    [SerializeField] [Range(0, 5)] private float raycastWidth;
+    [SerializeField] [Range(0, 5)] private float firstRaycastDistance;
+    [SerializeField] [Range(0, 5)] private float secondRaycastDistance;
+
+    [Header("Debug")]
+    [SerializeField] private bool drawRaycasts;
+    [SerializeField] private bool drawPositionPoints;
+    [SerializeField] [Range(0, 5)] private float pointsDrawDuration;
+    [SerializeField] private Transform debugContainer;
 
     private float inputAmount;
     private float verticalInput;
@@ -23,7 +36,11 @@ public class PlayerMovementController : MonoBehaviour
     private float runningTransition;
     private float currentMovementSpeed;
 
+    private Vector3 gravity;
+    private Vector3 floorMovement;
     private Vector3 moveDirection;
+    private Vector3 combinedRaycast;
+    private Vector3 raycastFloorPosition;
     private Coroutine movementRoutine;
     private Quaternion lastLookRotation;
 
@@ -57,6 +74,44 @@ public class PlayerMovementController : MonoBehaviour
     {
         if (movementRoutine != null) StopMovementRoutine();
         movementRoutine = null;
+    }
+
+    private Vector3 FindFloor()
+    {
+        // Width of raycasts around the centre of your character
+        float width = raycastWidth;
+
+        // Check floor on 5 raycasts, get the average when not Vector3.zero
+        int floorAverage = 1;
+
+        combinedRaycast = FloorRaycasts(0, 0, firstRaycastDistance);
+        floorAverage += (GetFloorAverage(width, 0) + GetFloorAverage(-width, 0) +
+                         GetFloorAverage(0, width) + GetFloorAverage(0, -width));
+
+        return combinedRaycast / floorAverage;
+    }
+
+    // Only add to average floor position if its not Vector3.zero
+    private int GetFloorAverage(float offsetX, float offsetZ)
+    {
+        if (FloorRaycasts(offsetX, offsetZ, firstRaycastDistance) == Vector3.zero) return 0;
+
+        combinedRaycast += FloorRaycasts(offsetX, offsetZ, firstRaycastDistance);
+
+        return 1;
+    }
+
+    private Vector3 FloorRaycasts(float offsetX, float offsetZ, float raycastLength)
+    {
+        // Move raycast
+        raycastFloorPosition = transform.TransformPoint(0 + offsetX, 0 + 0.5f, 0 + offsetZ);
+
+        // Debug for raycasts
+        if (drawRaycasts) Debug.DrawRay(raycastFloorPosition, Vector3.down * raycastLength, Color.yellow);
+
+        return Physics.Raycast(raycastFloorPosition, Vector3.down, out var hit, raycastLength)
+            ? hit.point
+            : Vector3.zero;
     }
 
     private void UpdateInputs()
@@ -101,7 +156,7 @@ public class PlayerMovementController : MonoBehaviour
         float directionZ = combinedInput.normalized.z;
 
         // Assign calculated direction
-        moveDirection = new Vector3 (directionX, 0, directionZ);
+        moveDirection = new Vector3(directionX, 0, directionZ);
     }
 
     private void UpdatePlayerLookRotation()
@@ -116,12 +171,62 @@ public class PlayerMovementController : MonoBehaviour
             // Calculate rotation
             Quaternion currentRotation = transform.rotation;
             Quaternion targetRotation = Quaternion.LookRotation(moveDirection);
-            Quaternion playerLookRotation = Quaternion.Slerp(currentRotation, targetRotation, inputAmount * rotationSpeed);
+            Quaternion playerLookRotation =
+                Quaternion.Slerp(currentRotation, targetRotation, inputAmount * rotationSpeed);
 
             // Assign calculated rotation
             transform.rotation = playerLookRotation;
             lastLookRotation = playerLookRotation;
         }
+    }
+
+    private void ApplyGravityAndUpdateRigidbody()
+    {
+        // If not grounded, increase down force
+        if (FloorRaycasts(0, 0, secondRaycastDistance) == Vector3.zero)
+        {
+            isGrounded = false;
+            gravity += Vector3.up * (Physics.gravity.y * Time.fixedDeltaTime);
+        }
+
+        // Find the Y position via raycasts
+        Vector3 floor = FindFloor();
+        Vector3 raycastPosition = new Vector3(body.position.x, floor.y, body.position.z);
+        Vector3 floorPosition = new Vector3(body.position.x, floor.y + floorOffsetY, body.position.z);
+
+        floorMovement = floorPosition;
+
+        // Debug for position points
+        if (drawPositionPoints)
+        {
+            Transform debugContainer = DebugController.Instance.DebugContainer;
+
+            GameObject floorPositionSphere = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+            floorPositionSphere.GetComponent<SphereCollider>().enabled = false;
+            floorPositionSphere.GetComponent<Renderer>().material.color = Color.cyan;
+            floorPositionSphere.transform.name = "FloorPositionSphere";
+            floorPositionSphere.transform.localScale = Vector3.one * 0.1f;
+            floorPositionSphere.transform.position = floorPosition;
+            floorPositionSphere.transform.parent = debugContainer;
+            Destroy(floorPositionSphere, pointsDrawDuration);
+
+            GameObject raycastPositionSphere = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+            raycastPositionSphere.GetComponent<SphereCollider>().enabled = false;
+            raycastPositionSphere.GetComponent<Renderer>().material.color = Color.green;
+            raycastPositionSphere.transform.name = "RaycastPositionSphere";
+            raycastPositionSphere.transform.localScale = Vector3.one * 0.1f;
+            raycastPositionSphere.transform.position = raycastPosition;
+            raycastPositionSphere.transform.parent = debugContainer;
+            Destroy(raycastPositionSphere, pointsDrawDuration);
+        }
+
+        // Only stick to floor when grounded
+        if (FloorRaycasts(0, 0, secondRaycastDistance) == Vector3.zero || floorMovement == body.position) return;
+
+        // Move the rigidbody to the floor
+        body.MovePosition(floorMovement);
+        isGrounded = true;
+        gravity.y = 0;
     }
 
     private void UpdatePlayerVelocity()
@@ -141,7 +246,7 @@ public class PlayerMovementController : MonoBehaviour
         Vector3 direction = isAxisPressed ? moveDirection : Vector3.zero;
 
         // Set velocity by multiplying movement direction and movement speed
-        body.velocity = direction * (currentMovementSpeed * inputAmount);
+        body.velocity = direction * (currentMovementSpeed * inputAmount) + gravity;
     }
 
     private void Move()
@@ -157,6 +262,8 @@ public class PlayerMovementController : MonoBehaviour
         UpdateCameraLookRotation(mainCameraTransform, lookAtTransform);
         UpdateMoveDirection(lookAtTransform);
         UpdatePlayerLookRotation();
+
+        ApplyGravityAndUpdateRigidbody();
         UpdatePlayerVelocity();
     }
 
